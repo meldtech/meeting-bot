@@ -4,7 +4,7 @@ HTTP service that receives **join** instructions from the Kair Voice application
 
 Today’s binary is a **stub**: it validates payloads, logs intent, and returns `202 Accepted`. Wire in browser automation, headless clients, or vendor SDKs where your deployment allows.
 
-While originally implemented for [Kair](https://kair.is/) and Kair Voice, this service is intentionally generic: any product that can send the join contract and receive audio callbacks can integrate it.
+While originally implemented for [Kair](https://kair.is/), this service is intentionally generic: any product that can send the join contract and receive audio callbacks can integrate it.
 
 - **Integration contract**: [INTEGRATION.md](INTEGRATION.md) (Kair → bot join JSON, bot → Kair `upload-audio`).
 - **OpenAPI**: [openapi.yaml](openapi.yaml).
@@ -71,6 +71,29 @@ If you want to implement or productionize a meeting bot on top of this service, 
 - Retry/backoff policy for both join attempts and audio callback uploads.
 - Observability expectations (structured logs, trace IDs, metrics, and audit events).
 - Failure semantics (when to return `202` vs `4xx/5xx`, and how to surface async failures).
+
+## Sending recordings to Kair
+
+If you are integrating this bot with [Kair](https://kair.is/), share a clear contract with your integration partner that covers endpoints, auth, payload shape, and delivery semantics.
+
+Recommended public contract (safe to document):
+
+- **Join endpoint**: the URL your service should call to request bot join for a meeting URL/platform.
+- **Upload endpoint**: the callback URL where the final recording should be uploaded.
+- **Auth**: use a short-lived bearer token for upload, scoped to one session/meeting where possible.
+- **Headers**: document required headers (for example `Authorization: Bearer <token>` and content type).
+- **Payload**: document required fields (platform, meeting link, external/session identifiers, optional metadata).
+- **Media constraints**: document accepted codecs/formats, max file size, and whether chunked uploads are supported.
+- **Retries/idempotency**: document how to retry safely and which idempotency key/identifier to include.
+- **Success/failure semantics**: document expected response codes and how async failures are reported.
+
+Suggested implementation notes:
+
+1. Issue temporary upload tokens with limited lifetime and narrow scope.
+2. Bind upload authorization to a specific session/meeting identifier.
+3. Expire tokens promptly after successful upload or timeout.
+4. Log request IDs for traceability across join and upload paths.
+5. Keep private/internal service details out of public docs; only expose the integration contract.
 
 ## Repository status
 
