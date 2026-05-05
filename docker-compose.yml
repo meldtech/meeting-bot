@@ -1,0 +1,8 @@
+services:
+  meeting-bot:
+    build: .
+    ports:
+      - "8090:8090"
+    environment:
+      RUST_LOG: kair_meeting_bot=debug,tower_http=info
+      # KAIR_API_BASE_URL: http://host.docker.internal:8000

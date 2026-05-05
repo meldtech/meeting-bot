@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: Kair Meeting Bot — join API
+  description: >
+    HTTP surface invoked by Kair Voice when a user invites the meeting bot.
+    See INTEGRATION.md for the full contract including callbacks to Kair Voice.
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:8090
+    description: Local default (PORT env)
+
+paths:
+  /health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ok
+
+  /google/join:
+    post:
+      summary: Join Google Meet (stub accepts request)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequest"
+      responses:
+        "202":
+          description: Accepted for processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinAccepted"
+        "400":
+          description: Invalid body or URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+
+  /zoom/join:
+    post:
+      summary: Join Zoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequest"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinAccepted"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+
+  /microsoft/join:
+    post:
+      summary: Join Microsoft Teams
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequest"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinAccepted"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+
+  /jitsi/join:
+    post:
+      summary: Join Jitsi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequest"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinAccepted"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorBody"
+
+components:
+  schemas:
+    JoinRequest:
+      type: object
+      required:
+        - bearerToken
+        - url
+        - name
+        - teamId
+        - timezone
+        - userId
+        - botId
+      properties:
+        bearerToken:
+          type: string
+        url:
+          type: string
+          format: uri
+        name:
+          type: string
+        teamId:
+          type: string
+        timezone:
+          type: string
+        userId:
+          type: string
+        botId:
+          type: string
+          format: uuid
+          description: Kair session id
+
+    JoinAccepted:
+      type: object
+      properties:
+        status:
+          type: string
+          example: accepted
+        platform:
+          type: string
+          example: google_meet
+        botId:
+          type: string
+          format: uuid
+
+    ErrorBody:
+      type: object
+      properties:
+        error:
+          type: string
