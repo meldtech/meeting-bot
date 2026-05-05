@@ -4,6 +4,8 @@ HTTP service that receives **join** instructions from the Kair Voice application
 
 Today’s binary is a **stub**: it validates payloads, logs intent, and returns `202 Accepted`. Wire in browser automation, headless clients, or vendor SDKs where your deployment allows.
 
+While originally implemented for [Kair](https://kair.is/) and Kair Voice, this service is intentionally generic: any product that can send the join contract and receive audio callbacks can integrate it.
+
 - **Integration contract**: [INTEGRATION.md](INTEGRATION.md) (Kair → bot join JSON, bot → Kair `upload-audio`).
 - **OpenAPI**: [openapi.yaml](openapi.yaml).
 
@@ -26,7 +28,15 @@ Environment variables are described in [`.env.example`](.env.example).
 
 ## Configure Kair Voice
 
-In Kair Voice `config.yml`, set **`app.meeting_bot_url`** to this service’s origin **without a trailing slash** (Kair appends `/google/join`, `/zoom/join`, etc.). See [api/docs/meeting-bot-service.md](../api/docs/meeting-bot-service.md) in the Kair Voice tree.
+This service is designed to run as an independently deployed dependency of Kair Voice.
+
+In Kair Voice `config.yml`, set **`app.meeting_bot_url`** to this service's origin **without a trailing slash** (Kair appends `/google/join`, `/zoom/join`, `/microsoft/join`, or `/jitsi/join`).
+
+Expected flow:
+
+1. Kair Voice sends a join request to this service.
+2. This service accepts and performs meeting-platform automation/recording work.
+3. This service uploads captured audio back to Kair Voice using the callback contract in [INTEGRATION.md](INTEGRATION.md).
 
 ## Roadmap / vision
 
@@ -38,10 +48,36 @@ Contributions welcome in these areas:
 
 Delivering multiple labelled streams or structured timelines will likely require **coordinated changes** in Kair Voice’s ingest and transcription models (beyond a single `upload-audio` file). Treat that as a later phase once single-track parity is solid.
 
-## Publishing as a separate Git repository
+## Contributing
 
-This directory lives inside the Kair Voice monorepo. To maintain a **dedicated remote** for collaborators, either:
+Contributions are welcome from anyone building meeting automation, capture, or integration tooling.
 
-- Copy or move this folder elsewhere and run `git init`, or
-- From the monorepo root: `git subtree split --prefix=meeting-bot -b meeting-bot-main` and push that branch to a new remote.
+Useful contribution types:
+
+- New platform adapters and hardening for existing adapters.
+- Reliability work (timeouts, retries, idempotency, backoff, and clearer error mapping).
+- Audio pipeline improvements (track separation, labels, metadata, and upload resilience).
+- Documentation, test fixtures, and reproducible local/dev workflows.
+
+Please open an issue or pull request with context on the platform, expected behavior, and verification steps.
+
+## Implementer checklist
+
+If you want to implement or productionize a meeting bot on top of this service, these details usually matter most:
+
+- Authentication model between caller and bot service (API keys/JWT/mTLS).
+- Idempotency strategy for repeated join requests.
+- Platform-specific capability matrix (supported meeting types, lobby flows, host permissions, recording constraints).
+- Retry/backoff policy for both join attempts and audio callback uploads.
+- Observability expectations (structured logs, trace IDs, metrics, and audit events).
+- Failure semantics (when to return `202` vs `4xx/5xx`, and how to surface async failures).
+
+## Repository status
+
+This project is now maintained as its own standalone repository: `meldtech/meeting-bot`.
+
+If you are extracting this service from another monorepo in the future, you can either:
+
+- Copy the folder into a new location and run `git init`, or
+- Preserve history with `git subtree split --prefix=meeting-bot -b meeting-bot-main` and push that branch to a new remote.
 
